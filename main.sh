@@ -1,8 +1,27 @@
 #!/usr/bin/bash
 
 usage() {
-    echo "add it later!!!!!!!!!"
+    echo "Usage: sudo $0 -d <windows_disk> -m <target_mac>"
+    echo ""
+    echo "Description:"
+    echo "  This script extracts the Bluetooth pairing key (Link Key) for a specific"
+    echo "  Bluetooth device from a mounted Windows SYSTEM registry hive and injects it"
+    echo "  into the corresponding Linux Bluetooth device info file."
+    echo ""
+    echo "Options:"
+    echo "  -d <windows_disk>    Specify the disk partition containing the Windows OS (e.g., sda3)"
+    echo "  -m <target_mac>      Target Bluetooth device MAC address (e.g., 80:99:E7:08:0C:92)"
+    echo "  -h                   Show this help message and exit"
+    echo ""
+    echo "Example:"
+    echo "  sudo $0 -d sda3 -m 80:99:E7:08:0C:92"
+    echo ""
+    echo "Note:"
+    echo "  - This script must be run as root (sudo)"
+    echo "  - After completion, restart Bluetooth service using:"
+    echo "      systemctl restart bluetooth"
 }
+
 
 normalize_mac() {
     local input="$1"
