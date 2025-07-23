@@ -1,5 +1,6 @@
 #!/usr/bin/bash
 
+# Function to display usage instructions
 usage() {
     echo "Usage: sudo $0 -d <windows_disk> -m <target_mac>"
     echo ""
@@ -22,67 +23,73 @@ usage() {
     echo "      systemctl restart bluetooth"
 }
 
+# Automatically called when script exits, to clean up any mounts or dirs
 trap cleanup EXIT
 
+# Cleanup function: unmounts Windows disk and removes mount directory
 cleanup() {
     umount /mnt/windows 2>/dev/null
     rmdir /mnt/windows 2>/dev/null
 }
 
-
+# Normalize MAC address: removes colons and converts to lowercase
 normalize_mac() {
     local input="$1"
     echo "$input" | tr -d ':' | tr 'A-F' 'a-f'
 }
 
+# Extracts the raw hex key bytes from chntpw hex dump
 extract_hex_bytes() {
     local input="$1"
     echo "$input" | grep '^:00000' | cut -c9-56 | tr -d ' '
 }
 
+# Updates the Key field in the Bluetooth device's info file
 change_linkkey() {
     local file="$1"
     local new_key="$2"
     sed -i "/^\[LinkKey\]/,/^\[/{s/^Key=.*/Key=$new_key/}" "$file"
 }
 
+# Parse command-line arguments
 while getopts "hd:m:" opt; do 
     case $opt in
-        h) 
-            usage
-            exit 0
-            ;;
-        d) 
-            DISK="$OPTARG"
-            ;;
-        m)
-            TARGETDEVICE="$OPTARG"
-            ;;
+        h) usage; exit 0 ;;
+        d) DISK="$OPTARG" ;;
+        m) TARGETDEVICE="$OPTARG" ;;
     esac
 done
 
+# Check for root privileges
 if (( $EUID!=0 )); then
     echo "Need root privileges."
     exit 1
 fi
 echo -e "running in root privileges...\n"
 
+# Ensure both disk and MAC are provided
 if [ -z "$DISK" ] || [ -z "$TARGETDEVICE" ]; then
     echo "missing -d <arg> and -m <arg>"
     usage
     exit 1
 fi
+
+# Create mount point for Windows partition
 mkdir -p /mnt/windows
 echo -e "made mount point at /mnt/windows\n"
 
+# Mount the Windows disk using ntfs-3g driver
 mount -t ntfs-3g /dev/$DISK /mnt/windows
+
 # Validate if mount was successful
 if ! mountpoint -q /mnt/windows; then
     echo "Failed to mount /dev/$DISK. Check if it's the correct partition and accessible."
     exit 1
 fi
 
+# Copy the SYSTEM hive from Windows partition
 cp /mnt/windows/Windows/System32/config/SYSTEM ~/SYSTEM.copy
+
 # Validate SYSTEM file copy
 if [ ! -f ~/SYSTEM.copy ]; then
     echo "Failed to copy SYSTEM registry file."
@@ -90,8 +97,10 @@ if [ ! -f ~/SYSTEM.copy ]; then
 fi
 echo -e "\n/mnt/windows/Windows/System32/config/SYSTEM registry copy created at ~/SYSTEM.copy\n"
 
+# Use chntpw to extract the CurrentControlSet value
 outputCS=$(echo -e "cd Select\nls\nq" | chntpw -e ~/SYSTEM.copy)
 controlset_num=$(echo "$outputCS" | grep '<Current>' | awk '{print $(NF-1)}')
+
 # Validate ControlSet detection
 if [ -z "$controlset_num" ]; then
     echo "Could not determine ControlSet from SYSTEM hive."
@@ -100,14 +109,19 @@ fi
 printf -v cs "ControlSet%03d" "$controlset_num"
 echo -e "accessing $cs\n"
 
+# Find Linux Bluetooth controller MAC and convert to Windows format
 btdriverlinux=$(ls /var/lib/bluetooth/)
 btdriverwindows=$(normalize_mac "$btdriverlinux")
 
 echo -e "accessing $cs\Services\BTHPORT\Parameters\Keys\\$btdriverwindows as bluetooth controller\n"
 
+# Normalize target device MAC address for registry lookup
 targetdevicewindows=$(normalize_mac "$TARGETDEVICE")
+
+# Extract the hex link key from Windows SYSTEM hive
 outputhex=$(echo -e "cd $cs\Services\BTHPORT\Parameters\Keys\\$btdriverwindows\nhex $targetdevicewindows\nq" | chntpw -e ~/SYSTEM.copy)
 hex=$(extract_hex_bytes "$outputhex" )
+
 # Validate target hex key
 if [ -z "$hex" ]; then
     echo "Could not extract hex key. Is the target device already paired in Windows?"
@@ -115,13 +129,17 @@ if [ -z "$hex" ]; then
 fi
 echo -e "hex key for target device: $hex\n"
 
-# Validate destination info file
+# Check if Linux-side info file exists for the target device
 if [ ! -f "/var/lib/bluetooth/$btdriverlinux/$TARGETDEVICE/info" ]; then
     echo "Bluetooth info file not found: /var/lib/bluetooth/$btdriverlinux/$TARGETDEVICE/info"
     exit 1
 fi
+
+# Replace LinkKey value in the Linux info file with the extracted Windows one
 change_linkkey "/var/lib/bluetooth/$btdriverlinux/$TARGETDEVICE/info" "$hex"
 echo  -e "updated the Key in the info file of Target Device $TARGETDEVICE\n"
+
+# Prompt user to restart Bluetooth for changes to take effect
 echo -e "PLEASE RESTART BLUETOOTH SERVICE TO CONNECT THE DEVICE, USE THE BELOW COMMAND TO RESTART...\nsystemctl restart bluetooth"
 
 # Unmounting after completion
@@ -129,4 +147,3 @@ umount /mnt/windows
 rmdir /mnt/windows
 
 exit 0
-
