@@ -146,4 +146,7 @@ echo -e "PLEASE RESTART BLUETOOTH SERVICE TO CONNECT THE DEVICE, USE THE BELOW C
 umount /mnt/windows
 rmdir /mnt/windows
 
+# remove SYSTEM hive
+rm ~/SYSTEM.copy
+
 exit 0
