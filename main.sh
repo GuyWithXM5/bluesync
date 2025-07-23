@@ -22,6 +22,13 @@ usage() {
     echo "      systemctl restart bluetooth"
 }
 
+trap cleanup EXIT
+
+cleanup() {
+    umount /mnt/windows 2>/dev/null
+    rmdir /mnt/windows 2>/dev/null
+}
+
 
 normalize_mac() {
     local input="$1"
