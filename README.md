@@ -1,6 +1,6 @@
 # 🌀 bluesync
 
-`bluesync` is a simple **sh** (POSIX shell) utility that syncs Bluetooth Link Keys between a Windows and Linux dual-boot setup. It extracts paired device keys from the Windows registry and applies them in your Linux environment, allowing seamless Bluetooth pairing without re-authentication.
+`bluesync` is a simple Shell utility that syncs Bluetooth Link Keys between a Windows and Linux dual-boot setup. It extracts paired device keys from the Windows registry and applies them in your Linux environment, allowing seamless Bluetooth pairing without re-authentication.
 
 ---
 
@@ -8,7 +8,7 @@
 
 * Extract Bluetooth Link Keys from Windows NTFS partitions
 * Apply keys to Linux for seamless dual-boot pairing
-* Clean, lightweight POSIX shell implementation
+* Clean, lightweight Shell implementation
 * Supports MAC address normalization
 
 ---
@@ -17,7 +17,7 @@
 
 Install the following dependencies:
 
-* `sh` (any POSIX-compatible shell such as `dash`, `busybox`, or `bash` used in POSIX mode)
+* [`sh`](https://pubs.opengroup.org/onlinepubs/9699919799/utilities/sh.html) — standard POSIX shell
 * [`ntfs-3g`](https://wiki.archlinux.org/title/NTFS-3G) — to mount Windows drives
 * [`chntpw`](https://wiki.archlinux.org/title/Chntpw) — to read Windows registry hives
 * [`bluez`](https://archlinux.org/packages/extra/x86_64/bluez/) *(optional)* — for Bluetooth support and restarting the service
@@ -104,7 +104,7 @@ sudo pacman -R bluesync
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the GNU General Public License v3.0 (GPLv3).
 
 ---
 
