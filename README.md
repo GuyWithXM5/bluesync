@@ -32,7 +32,13 @@ sudo pacman -S ntfs-3g chntpw bluez
 
 ## Installation
 
-### 🔹 Method 1: Using makepkg from source
+### 🔹 Method 1: From AUR repository
+
+```sh
+yay -S bluesync
+```
+
+### 🔹 Method 2: Using makepkg from source
 
 ```sh
 git clone https://github.com/anuvindap/bluesync.git
@@ -40,7 +46,7 @@ cd bluesync
 makepkg -si
 ```
 
-### 🔹 Method 2: Manual install
+### 🔹 Method 3: Manual install
 
 ```sh
 git clone https://github.com/anuvindap/bluesync.git
@@ -48,7 +54,7 @@ cd bluesync
 sudo install -Dm755 bluesync /usr/bin/bluesync
 ```
 
-### 🔹 Method 3: Download using cURL
+### 🔹 Method 4: Download using cURL
 
 ```sh
 curl -o bluesync https://bluesync.guywithxm5.in/bluesync
